@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Data.SqlClient;
+using System.Net;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
@@ -19,7 +20,7 @@ namespace apiADONET.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetPessoas()
+        public IActionResult GetPessoas()
         {
             DataTable dt = new DataTable();
             SqlConnection con = new SqlConnection(_config.GetConnectionString("Default"));
@@ -44,9 +45,10 @@ namespace apiADONET.Controllers
         }
 
         [HttpGet]
-        [Route("pessoa/{id}")]
-        public async Task<IActionResult> GetPessoasByID(int id)
+        [Route("/pessoa/{id}")]
+        public IActionResult GetPessoasByID(int id)
         {
+            
             using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("Default")))
             {
                 var query = $"P_SEL_PESSOA_X_ID {id}";
@@ -56,7 +58,7 @@ namespace apiADONET.Controllers
 
                 Pessoa pessoa = new Pessoa();
 
-                if (!reader.HasRows) return null;
+                if (!reader.HasRows) return StatusCode(404, "Pessoa não encontrada");
 
                 while (reader.Read())
                 {
@@ -75,10 +77,8 @@ namespace apiADONET.Controllers
             {
                 using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("Default")))
                 {
-                    using (SqlCommand cmd = connection.CreateCommand())
+                    using (SqlCommand cmd = new SqlCommand("p_ins_pessoa", connection))
                     {
-                        var query = $"p_ins_pessoa";
-                        cmd.CommandText = query;
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.Add("@name", SqlDbType.VarChar, 50).Value = pessoa.Name;
                         cmd.Parameters.Add("@email", SqlDbType.VarChar, 50).Value = pessoa.Email;
@@ -93,7 +93,42 @@ namespace apiADONET.Controllers
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        [HttpDelete]
+        [Route("/pessoa/{id}")]
+        public IActionResult DeletePerson(int id)
+        {
+            try
+            {
+                if (id == null) return NotFound();
+
+                using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("Default")))
+                {
+                    using (SqlCommand command = new SqlCommand("p_del_pessoa", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.Parameters.AddWithValue("@ID", id);
+                        connection.Open();
+                        int rows = command.ExecuteNonQuery();
+
+                        if(!(rows > 0))
+                        {
+                            return StatusCode(404, "Pessoa não encontrada ou já deletada");
+                        }
+
+                        return StatusCode(204, "Pessoa deletada com sucesso");
+                    }
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+
+                return (StatusCode(500, ex.Message));
             }
         }
 
