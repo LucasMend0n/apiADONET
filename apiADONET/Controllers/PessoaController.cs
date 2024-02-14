@@ -47,7 +47,7 @@ namespace apiADONET.Controllers
         [Route("pessoa/{id}")]
         public async Task<IActionResult> GetPessoasByID(int id)
         {
-            using  (SqlConnection connection = new SqlConnection(_config.GetConnectionString("Default")))
+            using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("Default")))
             {
                 var query = $"P_SEL_PESSOA_X_ID {id}";
                 SqlCommand command = new SqlCommand(query, connection);
@@ -56,7 +56,7 @@ namespace apiADONET.Controllers
 
                 Pessoa pessoa = new Pessoa();
 
-                if (!reader.HasRows) return null; 
+                if (!reader.HasRows) return null;
 
                 while (reader.Read())
                 {
@@ -71,8 +71,30 @@ namespace apiADONET.Controllers
         [HttpPost]
         public IActionResult CreatePerson(Pessoa pessoa)
         {
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("Default")))
+                {
+                    using (SqlCommand cmd = connection.CreateCommand())
+                    {
+                        var query = $"p_ins_pessoa";
+                        cmd.CommandText = query;
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.Add("@name", SqlDbType.VarChar, 50).Value = pessoa.Name;
+                        cmd.Parameters.Add("@email", SqlDbType.VarChar, 50).Value = pessoa.Email;
 
-            return Ok(pessoa);
+                        connection.Open();
+                        var newPessoaID = cmd.ExecuteScalar();
+
+                        pessoa.Id = Convert.ToInt32(newPessoaID);
+                    }
+                }
+                return Ok(pessoa);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
     }
