@@ -1,4 +1,4 @@
-﻿namespace apiADONET
+﻿namespace apiADONET.Models
 {
     public class Pessoa
     {

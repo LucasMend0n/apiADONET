@@ -1,10 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using apiADONET.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Data;
 using System.Data.SqlClient;
-using System.Net;
-using System.Numerics;
-using System.Runtime.CompilerServices;
+using System.Reflection;
 
 namespace apiADONET.Controllers
 {
@@ -123,11 +121,61 @@ namespace apiADONET.Controllers
                     }
                 }
 
-
             }
             catch (Exception ex)
             {
+                return (StatusCode(500, ex.Message));
+            }
+        }
 
+        [HttpPut]
+        [Route("/pessoa/{id}")]
+        public IActionResult UpdatePerson(int id, [FromBody] Pessoa pessoa)
+        {
+            if (id == null) return StatusCode(404, "Necessário informar um ID");
+
+            try
+            {
+                using (SqlConnection connection = new SqlConnection(_config.GetConnectionString("Default")))
+                {
+                    using (SqlCommand command = new SqlCommand("p_upd_pessoa", connection))
+                    {
+                        command.CommandType = CommandType.StoredProcedure;
+                        command.Parameters.AddWithValue("@ID", id);
+                        
+                        if (pessoa.Name != null)
+                        {
+                            command.Parameters.AddWithValue("@Name", pessoa.Name);
+                        }
+                        else
+                        {
+                            command.Parameters.AddWithValue("@Name", DBNull.Value);
+                        }
+
+                        if (pessoa.Email != null)
+                        {
+                            command.Parameters.AddWithValue("@Email", pessoa.Email);
+                        }
+                        else
+                        {
+                            command.Parameters.AddWithValue("@Email", DBNull.Value);
+                        }
+
+                        connection.Open();
+                        int rows = command.ExecuteNonQuery();
+
+                        if (!(rows > 0))
+                        {
+                            return StatusCode(404, "Pessoa não encontrada");
+                        }
+
+                        return StatusCode(204, "Pessoa atualizada com sucesso");
+                    }
+
+                }
+            }
+            catch (Exception ex)
+            {
                 return (StatusCode(500, ex.Message));
             }
         }
