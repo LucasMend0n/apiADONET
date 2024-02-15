@@ -18,6 +18,7 @@ namespace apiADONET.Controllers
         }
 
         [HttpGet]
+        [Route("/pessoa")]
         public IActionResult GetPessoas()
         {
             DataTable dt = new DataTable();
@@ -69,6 +70,7 @@ namespace apiADONET.Controllers
 
         }
         [HttpPost]
+        [Route("/pessoa")]
         public IActionResult CreatePerson(Pessoa pessoa)
         {
             try
